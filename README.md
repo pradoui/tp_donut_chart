@@ -8,7 +8,7 @@ Adicione ao seu pubspec.yaml:
 ```yaml
 tp_donut_chart:
   git:
-    url: https://github.com/seuusuario/tp_donut_chart.git
+    url: https://github.com/pradoui/tp_donut_chart.git
 ```
 
 ## Uso
