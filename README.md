@@ -1,31 +1,31 @@
 # TP Donut Chart
 
-Um widget de gráfico donut personalizável para Flutter.
+A customizable donut chart widget for Flutter.
 
-## Instalação
+## Installation
 
-Adicione ao seu pubspec.yaml:
+Add it to yours pubspec.yaml:
 ```yaml
 tp_donut_chart:
   git:
     url: https://github.com/pradoui/tp_donut_chart.git
 ```
 
-## Uso
+## How to use
 
 ```dart
 import 'package:tp_donut_chart/tp_donut_chart.dart';
 
 TPDonutChart(
   entries: [
-    DonutChartEntry(label: 'Roberta', value: 167, color: Colors.green),
-    DonutChartEntry(label: 'João', value: 100, color: Colors.blue),
-    DonutChartEntry(label: 'Thiago', value: 50), // usa cor padrão
+    DonutChartEntry(label: 'Robert', value: 167, color: Colors.green),
+    DonutChartEntry(label: 'John', value: 100, color: Colors.blue),
+    DonutChartEntry(label: 'Thiago', value: 50), 
   ],
   size: 200,
   strokeWidth: 24,
   gap: 32,
-  subtitleText: 'Conversas finalizadas',
+  subtitleText: 'Message Count',
   subtitleTextStyle: TextStyle(
     color: Colors.orange,
     fontSize: 16,
@@ -33,18 +33,18 @@ TPDonutChart(
 )
 ```
 
-## Parâmetros
-- `entries`: Lista de DonutChartEntry (label, valor, cor opcional)
-- `colors`: Paleta padrão para barras sem cor definida
-- `size`: Tamanho do gráfico
-- `strokeWidth`: Espessura das barras
-- `gap`: Espaço entre as barras (em pixels)
-- `subtitleText`: Texto abaixo do valor central
-- `subtitleTextStyle`: Estilo do texto abaixo do valor central
-- `centerTextColor`: Cor do texto central
-- `tooltipColor`: Cor de fundo do tooltip
-- `tooltipTextColor`: Cor do texto do tooltip
-- `textStyle`: Estilo aplicado a todos os textos do widget
+## Parameters
+- `entries`: List of DonutChartEntry (label, value, color optional)
+- `colors`: Standard palette for bars without defined color
+- `size`: Size of the chart
+- `strokeWidth`: Thickness of the bars
+- `gap`: Space between bars (in pixels)
+- `subtitleText`: Text below the central value
+- `subtitleTextStyle`: Text style of the text below the central value
+- `centerTextColor`: Color of central text
+- `tooltipColor`: Tooltip background color
+- `tooltipTextColor`: Tooltip text color
+- `textStyle`: Style applied to all widget texts
 
-## Licença
+## License
 MIT
