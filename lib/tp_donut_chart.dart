@@ -73,12 +73,12 @@ class _TPDonutChartState extends State<TPDonutChart> {
       angle += pi / 2; // Corrige para o topo ser zero
       if (angle < 0) angle += 2 * pi;
       final total = widget.entries.fold<int>(0, (sum, e) => sum + e.value);
-      double startAngle = 0;
+      double startAngle = -pi / 2;
       final gapRadians = widget.gap / (widget.size / 2);
       for (int i = 0; i < widget.entries.length; i++) {
         final sweep = max<double>(
             0, 2 * pi * (widget.entries[i].value / total) - gapRadians);
-        double arcStart = startAngle % (2 * pi);
+        double arcStart = (startAngle + gapRadians / 2) % (2 * pi);
         double arcEnd = (arcStart + sweep) % (2 * pi);
         bool isInArc = false;
         if (arcStart < arcEnd) {
@@ -94,7 +94,7 @@ class _TPDonutChartState extends State<TPDonutChart> {
           });
           return;
         }
-        startAngle += 2 * pi * (widget.entries[i].value / total);
+        startAngle += sweep + gapRadians;
       }
     }
     if (_hoveredIndex != null) {
@@ -265,7 +265,7 @@ class _DonutChartPainter extends CustomPainter {
         canvas.drawArc(Offset.zero & size, startAngle + gapRadians / 2, sweep,
             false, paint);
       }
-      startAngle += 2 * pi * (entry.value / total);
+      startAngle += sweep + gapRadians;
     }
   }
 
