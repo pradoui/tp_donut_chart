@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tp_donut_chart/tp_donut_chart.dart';
+import 'package:tp_donut_chart/animated_donut_chart.dart';
 
 void main() {
   runApp(const DonutChartDemoApp());
@@ -23,7 +23,7 @@ class DonutChartDemoApp extends StatelessWidget {
       home: Scaffold(
         appBar: AppBar(title: const Text('TPDonutChart Visual Test')),
         body: Center(
-          child: TPDonutChart(
+          child: AnimatedDonutChart(
             entries: entries,
             size: 240,
             strokeWidth: 32,

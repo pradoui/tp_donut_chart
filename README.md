@@ -1,50 +1,77 @@
-# TP Donut Chart
+# TPDonutChart
 
-A customizable donut chart widget for Flutter.
+A modern, responsive and animated donut chart widget for Flutter.
+
+## Features
+- Supports multiple entries (label, color, value)
+- Responsive (custom width and height)
+- Entry animation
+- Hover: highlights slice and shows value/label in the center
+- Modern look: rounded edges and gaps between arcs for up to 4 entries
+- Standard donut chart (no gaps, no rounded edges) for 5+ entries
+- Custom text color and style
 
 ## Installation
+Add the package to your `pubspec.yaml`:
 
-Add it to yours pubspec.yaml:
 ```yaml
-tp_donut_chart:
-  git:
-    url: https://github.com/pradoui/tp_donut_chart.git
+dependencies:
+  tp_donut_chart: ^0.0.3
 ```
 
-## How to use
+Then run:
+```
+flutter pub get
+```
+
+## Usage
 
 ```dart
-import 'package:tp_donut_chart/tp_donut_chart.dart';
+import 'package:tp_donut_chart/donut_chart.dart';
+
+final entries = [
+  TPDonutChartEntry(label: 'Sales', color: Colors.blue, value: 120),
+  TPDonutChartEntry(label: 'Expenses', color: Colors.red, value: 80),
+  TPDonutChartEntry(label: 'Profit', color: Colors.green, value: 60),
+  TPDonutChartEntry(label: 'Other', color: Colors.orange, value: 40),
+];
 
 TPDonutChart(
-  entries: [
-    DonutChartEntry(label: 'Robert', value: 167, color: Colors.green),
-    DonutChartEntry(label: 'John', value: 100, color: Colors.blue),
-    DonutChartEntry(label: 'Thiago', value: 50), 
-  ],
-  size: 200,
-  strokeWidth: 24,
-  gap: 32,
-  subtitleText: 'Message Count',
-  subtitleTextStyle: TextStyle(
-    color: Colors.orange,
-    fontSize: 16,
-  ),
+  entries: entries,
+  width: 300,
+  height: 300,
+  thickness: 40,
+  subtitleText: 'Total',
+  textColor: Colors.black,
+  textStyle: const TextStyle(fontWeight: FontWeight.bold),
 )
 ```
 
 ## Parameters
-- `entries`: List of DonutChartEntry (label, value, color optional)
-- `colors`: Standard palette for bars without defined color
-- `size`: Size of the chart
-- `strokeWidth`: Thickness of the bars
-- `gap`: Space between bars (in pixels)
-- `subtitleText`: Text below the central value
-- `subtitleTextStyle`: Text style of the text below the central value
-- `centerTextColor`: Color of central text
-- `tooltipColor`: Tooltip background color
-- `tooltipTextColor`: Tooltip text color
-- `textStyle`: Style applied to all widget texts
+- `entries`: List of TPDonutChartEntry (required)
+- `width`, `height`: Chart size
+- `thickness`: Arc thickness
+- `subtitleText`: Center subtitle below the value
+- `textColor`: Text color
+- `textStyle`: Text style
+
+## TPDonutChartEntry
+```dart
+class TPDonutChartEntry {
+  final String label;
+  final Color color;
+  final double value;
+
+  TPDonutChartEntry({
+    required this.label,
+    required this.color,
+    required this.value,
+  });
+}
+```
+
+## Example
+See `main.dart` for a complete usage example.
 
 ## License
 MIT

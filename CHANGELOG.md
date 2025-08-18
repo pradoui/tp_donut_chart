@@ -1,4 +1,6 @@
-
+## 0.0.3
+* New way to use, with working hover areas and animation.
+* In case of more than 4 list of items, the widget turns to basic style to prevent bugs.
 
 ## 0.0.2
 

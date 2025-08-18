@@ -1,228 +1,198 @@
-library tp_donut_chart;
-
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'package:flutter/gestures.dart';
 
-/// Representa uma entrada (barra) do gráfico donut.
 class DonutChartEntry {
   final String label;
-  final int value;
+  final Color color;
+  final double value;
 
-  /// Cor da barra. Se não for informada, será usada a cor padrão do pacote.
-  final Color? color;
-  DonutChartEntry({required this.label, required this.value, this.color});
+  DonutChartEntry({
+    required this.label,
+    required this.color,
+    required this.value,
+  });
 }
 
-/// Widget de gráfico donut personalizável.
 class TPDonutChart extends StatefulWidget {
   final List<DonutChartEntry> entries;
-  final List<Color>? colors;
-  final double size;
-  final double strokeWidth;
-  final double gap;
-  final String? subtitleText;
-  final TextStyle? subtitleTextStyle;
-  final Color? centerTextColor;
-  final Color? tooltipColor;
-  final Color? tooltipTextColor;
+  final double width;
+  final double height;
+  final double thickness;
+  final String subtitleText;
+  final Color? textColor;
   final TextStyle? textStyle;
 
   const TPDonutChart({
-    super.key,
+    Key? key,
     required this.entries,
-    this.colors,
-    this.size = 180,
-    this.strokeWidth = 22,
-    this.gap = 32, // gap em pixels
-    this.subtitleText,
-    this.subtitleTextStyle,
-    this.centerTextColor,
-    this.tooltipColor,
-    this.tooltipTextColor,
+    this.width = 250,
+    this.height = 250,
+    this.thickness = 40,
+    this.subtitleText = 'Total',
+    this.textColor,
     this.textStyle,
-  });
+  }) : super(key: key);
 
   @override
   State<TPDonutChart> createState() => _TPDonutChartState();
 }
 
-class _TPDonutChartState extends State<TPDonutChart> {
-  int? _hoveredIndex;
-  Offset? _tooltipPosition;
+class _TPDonutChartState extends State<TPDonutChart>
+    with SingleTickerProviderStateMixin {
+  int? hoveredIndex;
+  late AnimationController _controller;
 
-  List<Color> get _defaultColors => const [
-        Color(0xFFB7EACB), // verde claro
-        Color(0xFFB6E6FB), // azul claro
-        Color(0xFFFFE5B4), // amarelo claro
-        Color(0xFFFFB6B6), // vermelho claro
-        Color(0xFFD6D6F7), // lilás claro
-        Color(0xFFF7F7B6), // amarelo pálido
-      ];
-
-  void _handleHover(PointerHoverEvent event) {
-    final RenderBox box = context.findRenderObject() as RenderBox;
-    final local = box.globalToLocal(event.position);
-    final center = Offset(widget.size / 2, widget.size / 2);
-    final dx = local.dx - center.dx;
-    final dy = local.dy - center.dy;
-    final distance = sqrt(dx * dx + dy * dy);
-    if (distance < widget.size / 2 &&
-        distance > widget.size / 2 - widget.strokeWidth) {
-      double angle = atan2(dy, dx);
-      angle += pi / 2; // Corrige para o topo ser zero
-      if (angle < 0) angle += 2 * pi;
-      final total = widget.entries.fold<int>(0, (sum, e) => sum + e.value);
-      double startAngle = -pi / 2;
-      final gapRadians = widget.gap / (widget.size / 2);
-      for (int i = 0; i < widget.entries.length; i++) {
-        final sweep = max<double>(
-            0, 2 * pi * (widget.entries[i].value / total) - gapRadians);
-        double arcStart = (startAngle + gapRadians / 2) % (2 * pi);
-        double arcEnd = (arcStart + sweep) % (2 * pi);
-        bool isInArc = false;
-        if (arcStart < arcEnd) {
-          isInArc = angle >= arcStart && angle <= arcEnd;
-        } else {
-          // Arco cruza o zero
-          isInArc = angle >= arcStart || angle <= arcEnd;
-        }
-        if (isInArc) {
-          setState(() {
-            _hoveredIndex = i;
-            _tooltipPosition = local;
-          });
-          return;
-        }
-        startAngle += sweep + gapRadians;
-      }
-    }
-    if (_hoveredIndex != null) {
-      setState(() {
-        _hoveredIndex = null;
-        _tooltipPosition = null;
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..forward();
   }
 
-  void _handleExit(PointerExitEvent event) {
-    setState(() {
-      _hoveredIndex = null;
-      _tooltipPosition = null;
-    });
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final total = widget.entries.fold<int>(0, (sum, e) => sum + e.value);
-    final usedColors = widget.colors ?? _defaultColors;
-    final centerTextColor = widget.centerTextColor ?? Colors.white;
-    final tooltipColor = widget.tooltipColor ?? Colors.black.withOpacity(0.8);
-    final tooltipTextColor = widget.tooltipTextColor ?? Colors.white;
-    final textStyle = widget.textStyle ?? const TextStyle(color: Colors.white);
-    final subtitleText = widget.subtitleText ?? 'Total de mensagens';
-    final subtitleTextStyle = widget.subtitleTextStyle ??
-        const TextStyle(
-          color: Color(0xFFB0B6BA),
-          fontSize: 14,
-        );
+    double total = widget.entries.fold(0, (sum, item) => sum + item.value);
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        MouseRegion(
-          onHover: _handleHover,
-          onExit: _handleExit,
-          child: SizedBox(
-            width: widget.size,
-            height: widget.size,
+        SizedBox(
+          width: widget.width,
+          height: widget.height,
+          child: MouseRegion(
+            onHover: (event) {
+              final localPos = event.localPosition;
+              final center = Offset(widget.width / 2, widget.height / 2);
+              final radius =
+                  min(widget.width, widget.height) / 2 - widget.thickness / 2;
+              final dx = localPos.dx - center.dx;
+              final dy = localPos.dy - center.dy;
+              final distance = sqrt(dx * dx + dy * dy);
+              if (distance < radius + widget.thickness / 2 &&
+                  distance > radius - widget.thickness / 2) {
+                double angle = atan2(dy, dx);
+                if (angle < -pi / 2) angle += 2 * pi;
+                double startAngle = -pi / 2;
+                double total = widget.entries.fold(
+                  0,
+                  (sum, item) => sum + item.value,
+                );
+                for (int i = 0; i < widget.entries.length; i++) {
+                  final sweepAngle = (widget.entries[i].value / total) * 2 * pi;
+                  if (angle >= startAngle && angle < startAngle + sweepAngle) {
+                    if (hoveredIndex != i) {
+                      setState(() {
+                        hoveredIndex = i;
+                      });
+                    }
+                    return;
+                  }
+                  startAngle += sweepAngle;
+                }
+              } else {
+                if (hoveredIndex != null) {
+                  setState(() {
+                    hoveredIndex = null;
+                  });
+                }
+              }
+            },
+            onExit: (_) {
+              setState(() {
+                hoveredIndex = null;
+              });
+            },
             child: Stack(
+              alignment: Alignment.center,
               children: [
-                CustomPaint(
-                  size: Size(widget.size, widget.size),
-                  painter: _DonutChartPainter(
-                    entries: widget.entries,
-                    colors: usedColors,
-                    strokeWidth: widget.strokeWidth,
-                    gap: widget.gap,
-                    hoveredIndex: _hoveredIndex,
-                  ),
-                ),
-                // Valor central
-                Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        '$total',
-                        style: TextStyle(
-                          color: centerTextColor,
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
+                AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    return CustomPaint(
+                      size: Size(widget.width, widget.height),
+                      painter: _DonutChartPainter(
+                        entries: widget.entries,
+                        thickness: widget.thickness,
+                        animationValue: _controller.value,
+                        hoveredIndex: hoveredIndex,
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitleText,
-                        textAlign: TextAlign.center,
-                        style: subtitleTextStyle,
-                      ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
-                // Tooltip
-                if (_hoveredIndex != null && _tooltipPosition != null)
-                  Positioned(
-                    left:
-                        (_tooltipPosition!.dx - 24).clamp(0, widget.size - 48),
-                    top: (_tooltipPosition!.dy - 36).clamp(0, widget.size - 32),
-                    child: Material(
-                      color: Colors.transparent,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: tooltipColor,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          '${widget.entries[_hoveredIndex!].value}',
-                          style: TextStyle(
-                                  color: tooltipTextColor,
-                                  fontWeight: FontWeight.bold)
-                              .merge(textStyle),
-                        ),
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      hoveredIndex != null
+                          ? widget.entries[hoveredIndex!].value.toStringAsFixed(
+                              2,
+                            )
+                          : total.toStringAsFixed(2),
+                      style: (widget.textStyle ??
+                              Theme.of(context).textTheme.headlineMedium)
+                          ?.copyWith(
+                        fontSize: min(widget.width, widget.height) * 0.16,
+                        color: widget.textColor ??
+                            (hoveredIndex != null
+                                ? widget.entries[hoveredIndex!].color
+                                : null),
                       ),
                     ),
-                  ),
+                    Text(
+                      hoveredIndex != null
+                          ? widget.entries[hoveredIndex!].label
+                          : widget.subtitleText,
+                      style: (widget.textStyle ??
+                              Theme.of(context).textTheme.bodyMedium)
+                          ?.copyWith(
+                        fontSize: min(widget.width, widget.height) * 0.08,
+                        color: widget.textColor ??
+                            (hoveredIndex != null
+                                ? widget.entries[hoveredIndex!].color
+                                : null),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
         ),
-        const SizedBox(height: 28), // Espaçamento extra entre gráfico e labels
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        const SizedBox(height: 24),
+        Wrap(
+          alignment: WrapAlignment.center,
+          spacing: 16,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: List.generate(
-                  widget.entries.length,
-                  (i) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _LegendDot(
-                                color: widget.entries[i].color ??
-                                    usedColors[i % usedColors.length]),
-                            const SizedBox(width: 8),
-                            Text(widget.entries[i].label,
-                                style: textStyle, textAlign: TextAlign.left),
-                          ],
-                        ),
-                      )),
-            ),
+            for (int i = 0; i < widget.entries.length; i++)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: widget.entries[i].color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    widget.entries[i].label,
+                    style:
+                        widget.textStyle?.copyWith(color: widget.textColor) ??
+                            Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: widget.textColor,
+                                ),
+                  ),
+                ],
+              ),
           ],
         ),
       ],
@@ -232,62 +202,52 @@ class _TPDonutChartState extends State<TPDonutChart> {
 
 class _DonutChartPainter extends CustomPainter {
   final List<DonutChartEntry> entries;
-  final List<Color> colors;
-  final double strokeWidth;
-  final double gap;
+  final double thickness;
+  final double animationValue;
   final int? hoveredIndex;
 
   _DonutChartPainter({
     required this.entries,
-    required this.colors,
-    required this.strokeWidth,
-    required this.gap,
+    required this.thickness,
+    required this.animationValue,
     required this.hoveredIndex,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final total = entries.fold<int>(0, (sum, e) => sum + e.value);
-    if (total == 0) return;
+    double total = entries.fold(0, (sum, item) => sum + item.value);
     double startAngle = -pi / 2;
-    final gapRadians = gap / (size.width / 2);
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = min(size.width, size.height) / 2 - thickness / 2;
+
+    // Desenha os arcos (donut)
+    final bool useGaps = entries.length < 5;
+    final double gap = useGaps ? 0.48 : 0.0; // gap em radianos (~27 graus)
+    final StrokeCap cap = useGaps ? StrokeCap.round : StrokeCap.butt;
     for (int i = 0; i < entries.length; i++) {
-      final entry = entries[i];
-      final sweep = max<double>(0, 2 * pi * (entry.value / total) - gapRadians);
-      if (sweep > 0) {
-        final paint = Paint()
-          ..color = (hoveredIndex == null || hoveredIndex == i)
-              ? (entry.color ?? colors[i % colors.length])
-              : (entry.color ?? colors[i % colors.length]).withOpacity(0.3)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..strokeCap = StrokeCap.round;
-        canvas.drawArc(Offset.zero & size, startAngle + gapRadians / 2, sweep,
-            false, paint);
-      }
-      startAngle += sweep + gapRadians;
+      double sweepAngle = (entries[i].value / total) * 2 * pi * animationValue;
+      final isHovered = hoveredIndex == i;
+      final paint = Paint()
+        ..color = (hoveredIndex != null)
+            ? (isHovered ? entries[i].color : entries[i].color.withOpacity(0.3))
+            : entries[i].color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = thickness
+        ..strokeCap = cap;
+      // Aplica gap entre arcos, exceto se o sweepAngle for muito pequeno
+      final minSweep = gap * 1.5;
+      if (useGaps && sweepAngle > minSweep) sweepAngle -= gap;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        startAngle + (useGaps ? gap / 2 : 0),
+        sweepAngle,
+        false,
+        paint,
+      );
+      startAngle += (sweepAngle + (useGaps ? gap : 0));
     }
   }
 
   @override
-  bool shouldRepaint(covariant _DonutChartPainter oldDelegate) {
-    return oldDelegate.hoveredIndex != hoveredIndex ||
-        oldDelegate.entries != entries;
-  }
-}
-
-class _LegendDot extends StatelessWidget {
-  final Color color;
-  const _LegendDot({required this.color});
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 16,
-      height: 16,
-      decoration: BoxDecoration(
-        color: color,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
+  bool shouldRepaint(CustomPainter oldDelegate) => true;
 }

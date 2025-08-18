@@ -6,13 +6,10 @@ void main() {
   testWidgets('TPDonutChart exibe corretamente múltiplos itens e hover',
       (WidgetTester tester) async {
     final entries = [
-      DonutChartEntry(label: 'A', value: 10),
-      DonutChartEntry(label: 'B', value: 20),
-      DonutChartEntry(label: 'C', value: 30),
-      DonutChartEntry(label: 'D', value: 40),
-      DonutChartEntry(label: 'E', value: 50),
-      DonutChartEntry(label: 'F', value: 60),
-      DonutChartEntry(label: 'G', value: 70),
+      DonutChartEntry(label: 'Category1', color: Colors.blue, value: 120),
+      DonutChartEntry(label: 'Category2', color: Colors.red, value: 80),
+      DonutChartEntry(label: 'Category3', color: Colors.green, value: 60),
+      DonutChartEntry(label: 'Category4', color: Colors.orange, value: 40),
     ];
     await tester.pumpWidget(
       MaterialApp(
