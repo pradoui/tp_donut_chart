@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tp_donut_chart/modern_donut_chart.dart';
+import 'package:tp_donut_chart/tp_donut_chart.dart';
 
 void main() {
   runApp(const DonutChartDemoApp());
@@ -23,12 +23,13 @@ class DonutChartDemoApp extends StatelessWidget {
         backgroundColor: Color(0xFF23272A),
         appBar: AppBar(title: const Text('TPDonutChart Demo')),
         body: Center(
-          child: ModernDonutChart(
+          child: TPDonutChart(
             entries: entries,
-            size: 240,
+            width: 240,
+            height: 240,
             thickness: 32,
-            centerText: 'Leads',
-            centerTextStyle: TextStyle(
+            subtitleText: 'Leads',
+            textStyle: TextStyle(
                 color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold),
           ),
         ),
