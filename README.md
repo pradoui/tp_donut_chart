@@ -10,6 +10,15 @@ A customizable and responsive donut chart widget for Flutter. Supports up to 10 
 - Custom styles for central value and label
 - Legend below the chart
 
+## Installation
+
+Add this to your `pubspec.yaml`:
+
+```yaml
+dependencies:
+  tp_donut_chart: ^0.0.4  
+```
+
 ## Usage
 ```dart
 TPDonutChart(
