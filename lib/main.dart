@@ -11,11 +11,11 @@ class DonutChartDemoApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final entries = [
-      DonutChartEntry(label: 'Leads', value: 3137, color: Color(0xFF5B2EFF)),
-      DonutChartEntry(label: 'Ativos', value: 1200, color: Color(0xFF2ECC40)),
+      DonutChartEntry(label: 'Leads', value: 3000, color: Color(0xFF5B2EFF)),
+      DonutChartEntry(label: 'Ativos', value: 5200, color: Color(0xFF2ECC40)),
       DonutChartEntry(label: 'Inativos', value: 300, color: Color(0xFFFFDC00)),
       DonutChartEntry(label: 'Erro', value: 100, color: Color(0xFFFF4136)),
-      DonutChartEntry(label: 'Teste', value: 200, color: Color(0xFF39CCCC)),
+      //DonutChartEntry(label: 'Teste', value: 200, color: Color(0xFF39CCCC)),
     ];
     return MaterialApp(
       theme: ThemeData.dark(),
@@ -30,7 +30,9 @@ class DonutChartDemoApp extends StatelessWidget {
             thickness: 32,
             subtitleText: 'Leads',
             textStyle: TextStyle(
-                color: Colors.white, fontSize: 40, fontWeight: FontWeight.bold),
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.normal),
           ),
         ),
       ),

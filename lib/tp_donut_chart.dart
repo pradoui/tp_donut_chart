@@ -79,14 +79,37 @@ class _TPDonutChartState extends State<TPDonutChart>
                   distance > radius - widget.thickness / 2) {
                 double angle = atan2(dy, dx);
                 if (angle < -pi / 2) angle += 2 * pi;
-                double startAngle = -pi / 2;
-                double total = widget.entries.fold(
-                  0,
-                  (sum, item) => sum + item.value,
-                );
+                // Repete a lógica do painter
+                final bool useGaps = widget.entries.length < 5;
+                final double gap = useGaps ? 0.48 : 0.0;
+                final int nGaps = useGaps ? widget.entries.length : 0;
+                final double totalGap = nGaps * gap;
+                double total =
+                    widget.entries.fold(0, (sum, item) => sum + item.value);
+                // Calcula sweepAngles originais
+                List<double> sweepAngles =
+                    List.filled(widget.entries.length, 0);
+                double sweepSum = 0;
                 for (int i = 0; i < widget.entries.length; i++) {
-                  final sweepAngle = (widget.entries[i].value / total) * 2 * pi;
-                  if (angle >= startAngle && angle < startAngle + sweepAngle) {
+                  sweepAngles[i] = total > 0
+                      ? (widget.entries[i].value / total) * 2 * pi
+                      : 0;
+                  sweepSum += sweepAngles[i];
+                }
+                // Se a soma dos arcos + gaps ultrapassar 2π, normaliza os arcos
+                double maxSweep = 2 * pi - totalGap;
+                if (sweepSum > maxSweep && sweepSum > 0) {
+                  double ratio = maxSweep / sweepSum;
+                  for (int i = 0; i < sweepAngles.length; i++) {
+                    sweepAngles[i] *= ratio;
+                  }
+                }
+                double startAngle = -pi / 2;
+                for (int i = 0; i < widget.entries.length; i++) {
+                  double arcStart = startAngle + (useGaps ? gap / 2 : 0);
+                  double arcEnd = arcStart + sweepAngles[i];
+                  // Verifica se o ângulo está dentro do arco
+                  if (angle >= arcStart && angle < arcEnd) {
                     if (hoveredIndex != i) {
                       setState(() {
                         hoveredIndex = i;
@@ -94,7 +117,7 @@ class _TPDonutChartState extends State<TPDonutChart>
                     }
                     return;
                   }
-                  startAngle += sweepAngle;
+                  startAngle += (sweepAngles[i] + (useGaps ? gap : 0));
                 }
               } else {
                 if (hoveredIndex != null) {
@@ -220,12 +243,30 @@ class _DonutChartPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = min(size.width, size.height) / 2 - thickness / 2;
 
-    // Desenha os arcos (donut)
+    // Ajuste para evitar sobreposição dos arcos
     final bool useGaps = entries.length < 5;
     final double gap = useGaps ? 0.48 : 0.0; // gap em radianos (~27 graus)
     final StrokeCap cap = useGaps ? StrokeCap.round : StrokeCap.butt;
+    final int nGaps = useGaps ? entries.length : 0;
+    final double totalGap = nGaps * gap;
+    // Calcula sweepAngles originais
+    List<double> sweepAngles = List.filled(entries.length, 0);
+    double sweepSum = 0;
     for (int i = 0; i < entries.length; i++) {
-      double sweepAngle = (entries[i].value / total) * 2 * pi * animationValue;
+      sweepAngles[i] =
+          total > 0 ? (entries[i].value / total) * 2 * pi * animationValue : 0;
+      sweepSum += sweepAngles[i];
+    }
+    // Se a soma dos arcos + gaps ultrapassar 2π, normaliza os arcos
+    double maxSweep = 2 * pi - totalGap;
+    if (sweepSum > maxSweep && sweepSum > 0) {
+      double ratio = maxSweep / sweepSum;
+      for (int i = 0; i < sweepAngles.length; i++) {
+        sweepAngles[i] *= ratio;
+      }
+    }
+    // Desenha os arcos com gap visual
+    for (int i = 0; i < entries.length; i++) {
       final isHovered = hoveredIndex == i;
       final paint = Paint()
         ..color = (hoveredIndex != null)
@@ -234,17 +275,14 @@ class _DonutChartPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = thickness
         ..strokeCap = cap;
-      // Aplica gap entre arcos, exceto se o sweepAngle for muito pequeno
-      final minSweep = gap * 1.5;
-      if (useGaps && sweepAngle > minSweep) sweepAngle -= gap;
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         startAngle + (useGaps ? gap / 2 : 0),
-        sweepAngle,
+        sweepAngles[i],
         false,
         paint,
       );
-      startAngle += (sweepAngle + (useGaps ? gap : 0));
+      startAngle += (sweepAngles[i] + (useGaps ? gap : 0));
     }
   }
 
