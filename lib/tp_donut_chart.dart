@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
+/// A customizable and responsive donut chart widget for Flutter.
+/// Supports up to 10 entries with rounded gaps, hover effect, and central value/label styling.
 class DonutChartEntry {
   final String label;
   final Color color;
@@ -21,6 +23,8 @@ class TPDonutChart extends StatefulWidget {
   final String subtitleText;
   final Color? textColor;
   final TextStyle? textStyle;
+  final TextStyle? valueTextStyle; // NOVO
+  final TextStyle? labelTextStyle; // NOVO
 
   const TPDonutChart({
     Key? key,
@@ -31,6 +35,8 @@ class TPDonutChart extends StatefulWidget {
     this.subtitleText = 'Total',
     this.textColor,
     this.textStyle,
+    this.valueTextStyle,
+    this.labelTextStyle,
   }) : super(key: key);
 
   @override
@@ -60,165 +66,216 @@ class _TPDonutChartState extends State<TPDonutChart>
   @override
   Widget build(BuildContext context) {
     double total = widget.entries.fold(0, (sum, item) => sum + item.value);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          width: widget.width,
-          height: widget.height,
-          child: MouseRegion(
-            onHover: (event) {
-              final localPos = event.localPosition;
-              final center = Offset(widget.width / 2, widget.height / 2);
-              final radius =
-                  min(widget.width, widget.height) / 2 - widget.thickness / 2;
-              final dx = localPos.dx - center.dx;
-              final dy = localPos.dy - center.dy;
-              final distance = sqrt(dx * dx + dy * dy);
-              if (distance < radius + widget.thickness / 2 &&
-                  distance > radius - widget.thickness / 2) {
-                double angle = atan2(dy, dx);
-                if (angle < -pi / 2) angle += 2 * pi;
-                // Repete a lógica do painter
-                final bool useGaps = widget.entries.length < 5;
-                final double gap = useGaps ? 0.48 : 0.0;
-                final int nGaps = useGaps ? widget.entries.length : 0;
-                final double totalGap = nGaps * gap;
-                double total =
-                    widget.entries.fold(0, (sum, item) => sum + item.value);
-                // Calcula sweepAngles originais
-                List<double> sweepAngles =
-                    List.filled(widget.entries.length, 0);
-                double sweepSum = 0;
-                for (int i = 0; i < widget.entries.length; i++) {
-                  sweepAngles[i] = total > 0
-                      ? (widget.entries[i].value / total) * 2 * pi
-                      : 0;
-                  sweepSum += sweepAngles[i];
-                }
-                // Se a soma dos arcos + gaps ultrapassar 2π, normaliza os arcos
-                double maxSweep = 2 * pi - totalGap;
-                if (sweepSum > maxSweep && sweepSum > 0) {
-                  double ratio = maxSweep / sweepSum;
-                  for (int i = 0; i < sweepAngles.length; i++) {
-                    sweepAngles[i] *= ratio;
-                  }
-                }
-                double startAngle = -pi / 2;
-                for (int i = 0; i < widget.entries.length; i++) {
-                  double arcStart = startAngle + (useGaps ? gap / 2 : 0);
-                  double arcEnd = arcStart + sweepAngles[i];
-                  // Verifica se o ângulo está dentro do arco
-                  if (angle >= arcStart && angle < arcEnd) {
-                    if (hoveredIndex != i) {
-                      setState(() {
-                        hoveredIndex = i;
-                      });
+    return SizedBox(
+      width: widget.width,
+      height: widget.height,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final w = constraints.maxWidth;
+          final h = constraints.maxHeight;
+          final donutSize = min(w, h * 0.7); // 70% for the chart
+          final labelHeight = h - donutSize;
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: donutSize,
+                height: donutSize,
+                child: MouseRegion(
+                  onHover: (event) {
+                    final localPos = event.localPosition;
+                    final center = Offset(donutSize / 2, donutSize / 2);
+                    final radius = donutSize / 2 - widget.thickness / 2;
+                    final dx = localPos.dx - center.dx;
+                    final dy = localPos.dy - center.dy;
+                    final distance = sqrt(dx * dx + dy * dy);
+                    if (distance < radius + widget.thickness / 2 &&
+                        distance > radius - widget.thickness / 2) {
+                      double angle = atan2(dy, dx);
+                      if (angle < -pi / 2) angle += 2 * pi;
+                      final bool useGaps = widget.entries.length <= 10;
+                      final double gap = useGaps ? 0.48 : 0.0;
+                      final int nGaps = useGaps ? widget.entries.length : 0;
+                      final double totalGap = nGaps * gap;
+                      double total = widget.entries
+                          .fold(0, (sum, item) => sum + item.value);
+                      List<double> sweepAngles =
+                          List.filled(widget.entries.length, 0);
+                      double sweepSum = 0;
+                      for (int i = 0; i < widget.entries.length; i++) {
+                        sweepAngles[i] = total > 0
+                            ? (widget.entries[i].value / total) * 2 * pi
+                            : 0;
+                        sweepSum += sweepAngles[i];
+                      }
+                      double maxSweep = 2 * pi - totalGap;
+                      if (sweepSum > maxSweep && sweepSum > 0) {
+                        double ratio = maxSweep / sweepSum;
+                        for (int i = 0; i < sweepAngles.length; i++) {
+                          sweepAngles[i] *= ratio;
+                        }
+                      }
+                      double startAngle = -pi / 2;
+                      for (int i = 0; i < widget.entries.length; i++) {
+                        double arcStart = startAngle + (useGaps ? gap / 2 : 0);
+                        double arcEnd = arcStart + sweepAngles[i];
+                        if (angle >= arcStart && angle < arcEnd) {
+                          if (hoveredIndex != i) {
+                            setState(() {
+                              hoveredIndex = i;
+                            });
+                          }
+                          return;
+                        }
+                        startAngle += sweepAngles[i] + (useGaps ? gap : 0);
+                      }
+                    } else {
+                      if (hoveredIndex != null) {
+                        setState(() {
+                          hoveredIndex = null;
+                        });
+                      }
                     }
-                    return;
-                  }
-                  startAngle += (sweepAngles[i] + (useGaps ? gap : 0));
-                }
-              } else {
-                if (hoveredIndex != null) {
-                  setState(() {
-                    hoveredIndex = null;
-                  });
-                }
-              }
-            },
-            onExit: (_) {
-              setState(() {
-                hoveredIndex = null;
-              });
-            },
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                AnimatedBuilder(
-                  animation: _controller,
-                  builder: (context, child) {
-                    return CustomPaint(
-                      size: Size(widget.width, widget.height),
-                      painter: _DonutChartPainter(
-                        entries: widget.entries,
-                        thickness: widget.thickness,
-                        animationValue: _controller.value,
-                        hoveredIndex: hoveredIndex,
-                      ),
-                    );
                   },
-                ),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      hoveredIndex != null
-                          ? widget.entries[hoveredIndex!].value.toStringAsFixed(
-                              2,
-                            )
-                          : total.toStringAsFixed(2),
-                      style: (widget.textStyle ??
-                              Theme.of(context).textTheme.headlineMedium)
-                          ?.copyWith(
-                        fontSize: min(widget.width, widget.height) * 0.16,
-                        color: widget.textColor ??
-                            (hoveredIndex != null
-                                ? widget.entries[hoveredIndex!].color
-                                : null),
+                  onExit: (_) {
+                    setState(() {
+                      hoveredIndex = null;
+                    });
+                  },
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      AnimatedBuilder(
+                        animation: _controller,
+                        builder: (context, child) {
+                          return CustomPaint(
+                            size: Size(donutSize, donutSize),
+                            painter: _DonutChartPainter(
+                              entries: widget.entries,
+                              thickness: widget.thickness,
+                              animationValue: _controller.value,
+                              hoveredIndex: hoveredIndex,
+                            ),
+                          );
+                        },
                       ),
-                    ),
-                    Text(
-                      hoveredIndex != null
-                          ? widget.entries[hoveredIndex!].label
-                          : widget.subtitleText,
-                      style: (widget.textStyle ??
-                              Theme.of(context).textTheme.bodyMedium)
-                          ?.copyWith(
-                        fontSize: min(widget.width, widget.height) * 0.08,
-                        color: widget.textColor ??
-                            (hoveredIndex != null
-                                ? widget.entries[hoveredIndex!].color
-                                : null),
+                      Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              hoveredIndex != null
+                                  ? widget.entries[hoveredIndex!].value
+                                      .toStringAsFixed(2)
+                                  : total.toStringAsFixed(2),
+                              style: (() {
+                                final baseStyle = widget.valueTextStyle ??
+                                    widget.textStyle ??
+                                    Theme.of(context).textTheme.headlineMedium;
+                                if (baseStyle?.fontSize != null) {
+                                  return baseStyle?.copyWith(
+                                    color: widget.textColor ??
+                                        (hoveredIndex != null
+                                            ? widget
+                                                .entries[hoveredIndex!].color
+                                            : null),
+                                  );
+                                } else {
+                                  return baseStyle?.copyWith(
+                                    fontSize:
+                                        min(widget.width, widget.height) * 0.16,
+                                    color: widget.textColor ??
+                                        (hoveredIndex != null
+                                            ? widget
+                                                .entries[hoveredIndex!].color
+                                            : null),
+                                  );
+                                }
+                              })(),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              hoveredIndex != null
+                                  ? widget.entries[hoveredIndex!].label
+                                  : widget.subtitleText,
+                              style: (() {
+                                final baseStyle = widget.labelTextStyle ??
+                                    widget.textStyle ??
+                                    Theme.of(context).textTheme.bodyMedium;
+                                if (baseStyle?.fontSize != null) {
+                                  return baseStyle?.copyWith(
+                                    color: widget.textColor ??
+                                        (hoveredIndex != null
+                                            ? widget
+                                                .entries[hoveredIndex!].color
+                                            : null),
+                                  );
+                                } else {
+                                  return baseStyle?.copyWith(
+                                    fontSize:
+                                        min(widget.width, widget.height) * 0.08,
+                                    color: widget.textColor ??
+                                        (hoveredIndex != null
+                                            ? widget
+                                                .entries[hoveredIndex!].color
+                                            : null),
+                                  );
+                                }
+                              })(),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 24),
-        Wrap(
-          alignment: WrapAlignment.center,
-          spacing: 16,
-          children: [
-            for (int i = 0; i < widget.entries.length; i++)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 16,
-                    height: 16,
-                    decoration: BoxDecoration(
-                      color: widget.entries[i].color,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    widget.entries[i].label,
-                    style:
-                        widget.textStyle?.copyWith(color: widget.textColor) ??
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: widget.textColor,
-                                ),
-                  ),
-                ],
               ),
-          ],
-        ),
-      ],
+              SizedBox(
+                height: labelHeight > 0 ? labelHeight : 0,
+                child: Center(
+                  child: Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 16,
+                    children: [
+                      for (int i = 0; i < widget.entries.length; i++)
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: widget.entries[i].color,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              widget.entries[i].label,
+                              style: widget.textStyle
+                                      ?.copyWith(color: widget.textColor) ??
+                                  Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.copyWith(
+                                        color: widget.textColor,
+                                      ),
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          );
+        },
+      ),
     );
   }
 }
@@ -243,13 +300,11 @@ class _DonutChartPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = min(size.width, size.height) / 2 - thickness / 2;
 
-    // Ajuste para evitar sobreposição dos arcos
-    final bool useGaps = entries.length < 5;
-    final double gap = useGaps ? 0.48 : 0.0; // gap em radianos (~27 graus)
+    final bool useGaps = entries.length <= 10;
+    final double gap = useGaps ? 0.48 : 0.0; // fixed gap
     final StrokeCap cap = useGaps ? StrokeCap.round : StrokeCap.butt;
     final int nGaps = useGaps ? entries.length : 0;
     final double totalGap = nGaps * gap;
-    // Calcula sweepAngles originais
     List<double> sweepAngles = List.filled(entries.length, 0);
     double sweepSum = 0;
     for (int i = 0; i < entries.length; i++) {
@@ -257,7 +312,6 @@ class _DonutChartPainter extends CustomPainter {
           total > 0 ? (entries[i].value / total) * 2 * pi * animationValue : 0;
       sweepSum += sweepAngles[i];
     }
-    // Se a soma dos arcos + gaps ultrapassar 2π, normaliza os arcos
     double maxSweep = 2 * pi - totalGap;
     if (sweepSum > maxSweep && sweepSum > 0) {
       double ratio = maxSweep / sweepSum;
@@ -265,7 +319,7 @@ class _DonutChartPainter extends CustomPainter {
         sweepAngles[i] *= ratio;
       }
     }
-    // Desenha os arcos com gap visual
+    // Draw arcs with fixed gap
     for (int i = 0; i < entries.length; i++) {
       final isHovered = hoveredIndex == i;
       final paint = Paint()
@@ -282,7 +336,7 @@ class _DonutChartPainter extends CustomPainter {
         false,
         paint,
       );
-      startAngle += (sweepAngles[i] + (useGaps ? gap : 0));
+      startAngle += sweepAngles[i] + (useGaps ? gap : 0);
     }
   }
 

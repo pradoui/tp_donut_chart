@@ -1,6 +1,6 @@
 name: tp_donut_chart
-description: Um widget de gráfico donut personalizável para Flutter.
-version: 0.0.3
+description: A customizable and responsive donut chart widget for Flutter, supporting up to 10 entries with rounded gaps, hover effect, and central value/label styling.
+version: 0.0.4
 
 repository: https://github.com/pradoui/tp_donut_chart.git
 environment:
